@@ -464,22 +464,31 @@ export default class DataProxy {
     return true;
   }
 
-  pasteFromSystemClipboard(resetSheet, eventTrigger) {
+  pasteFromSystemClipboard(evt, resetSheet, eventTrigger) {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then((content) => {this.getContentFromSystemClipboard(content, resetSheet, eventTrigger)});
+    }
+    else {
+      let content = evt.clipboardData.getData('text/plain');
+      this.getContentFromSystemClipboard(content, resetSheet, eventTrigger);
+    }
+  }
+
+  getContentFromSystemClipboard(content, resetSheet, eventTrigger) {
     const { selector } = this;
-    navigator.clipboard.readText().then((content) => {
-      const contentToPaste = this.parseClipboardContent(content);
-      let startRow = selector.ri;
-      contentToPaste.forEach((row) => {
-        let startColumn = selector.ci;
-        row.forEach((cellContent) => {
-          this.setCellText(startRow, startColumn, cellContent, 'input');
-          startColumn += 1;
-        });
-        startRow += 1;
+
+    const contentToPaste = this.parseClipboardContent(content);
+    let startRow = selector.ri;
+    contentToPaste.forEach((row) => {
+      let startColumn = selector.ci;
+      row.forEach((cellContent) => {
+        this.setCellText(startRow, startColumn, cellContent, 'input');
+        startColumn += 1;
       });
-      resetSheet();
-      eventTrigger(this.rows.getData());
+      startRow += 1;
     });
+    resetSheet();
+    eventTrigger(this.rows.getData());
   }
 
   parseClipboardContent(clipboardContent) {
